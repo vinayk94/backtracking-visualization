@@ -83,7 +83,7 @@ const BacktrackingVisualization = () => {
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
-      <h1 style={{ textAlign: 'center', color: '#37474F' }}>Backtracking Visualization: Combination Sum II</h1>
+      <h1 style={{ textAlign: 'center', color: '#37474F' }}>Backtracking Visualization: Combination Sum </h1>
       <h2 style={{ textAlign: 'center', color: '#546E7A' }}>Target: 8, Candidates: [1, 1, 2, 5, 6, 7]</h2>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <svg width="1000" height="600">
