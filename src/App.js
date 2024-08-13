@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
-const TreeNode = ({ node, depth, isActive, isValid }) => {
-  const color = isValid ? '#98FB98' : isActive ? '#FFD700' : '#FFF';
+const TreeNode = ({ node, depth }) => {
+  const color = node.isValid ? '#4CAF50' : node.isActive ? '#FFA726' : '#90CAF9';
   return (
     <motion.g initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-      <circle cx={node.x} cy={node.y} r="20" fill={color} stroke="#000" />
-      <text x={node.x} y={node.y} textAnchor="middle" dy=".3em">{node.value}</text>
+      <circle cx={node.x} cy={node.y} r="25" fill={color} stroke="#37474F" strokeWidth="2" />
+      <text x={node.x} y={node.y} textAnchor="middle" dy=".3em" fill="#37474F" fontSize="14">{node.value}</text>
       {node.children.map((child, index) => (
         <React.Fragment key={index}>
-          <line x1={node.x} y1={node.y + 20} x2={child.x} y2={child.y - 20} stroke="#000" />
-          <TreeNode node={child} depth={depth + 1} isActive={child.isActive} isValid={child.isValid} />
+          <line x1={node.x} y1={node.y + 25} x2={child.x} y2={child.y - 25} stroke="#78909C" strokeWidth="2" />
+          <TreeNode node={child} depth={depth + 1} />
         </React.Fragment>
       ))}
     </motion.g>
@@ -20,28 +20,37 @@ const TreeNode = ({ node, depth, isActive, isValid }) => {
 const BacktrackingVisualization = () => {
   const [tree, setTree] = useState(null);
   const [step, setStep] = useState(0);
+  const [combinations, setCombinations] = useState([]);
 
   useEffect(() => {
-    const candidatesWithDuplicates = [1, 1, 2, 5, 6, 7];
+    const candidates = [1, 1, 2, 5, 6, 7];
     const target = 8;
     
     const generateTree = () => {
-      const root = { value: 'Start', x: 300, y: 50, children: [] };
-      const buildTree = (node, candidates, remainingTarget, depth) => {
-        if (remainingTarget < 0 || depth > candidates.length) return;
-        candidates.forEach((candidate, index) => {
-          if (index > 0 && candidate === candidates[index - 1]) return; // Skip duplicates
+      const root = { value: 'Start', x: 500, y: 50, children: [], sum: 0 };
+      const buildTree = (node, remainingCandidates, remainingTarget, path) => {
+        if (remainingTarget === 0) {
+          node.isValid = true;
+          return;
+        }
+        if (remainingTarget < 0 || remainingCandidates.length === 0) return;
+        
+        remainingCandidates.forEach((candidate, index) => {
+          if (index > 0 && candidate === remainingCandidates[index - 1]) return; // Skip duplicates
+          const newPath = [...path, candidate];
           const childNode = { 
-            value: candidate, 
-            x: node.x - 150 + 300 * (index / (candidates.length - 1)), 
+            value: candidate,
+            x: node.x - 200 + 400 * (index / (remainingCandidates.length - 1)),
             y: node.y + 100,
-            children: []
+            children: [],
+            sum: node.sum + candidate,
+            path: newPath
           };
           node.children.push(childNode);
-          buildTree(childNode, candidates.slice(index + 1), remainingTarget - candidate, depth + 1);
+          buildTree(childNode, remainingCandidates.slice(index + 1), remainingTarget - candidate, newPath);
         });
       };
-      buildTree(root, candidatesWithDuplicates, target, 0);
+      buildTree(root, candidates, target, []);
       return root;
     };
 
@@ -50,36 +59,22 @@ const BacktrackingVisualization = () => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (step < 20) setStep(step + 1);
+      if (step < 30) setStep(step + 1);
     }, 1000);
     return () => clearTimeout(timer);
   }, [step]);
 
   const updateTreeState = (node, depth) => {
-    if (depth === step) {
-      node.isActive = true;
-    } else {
-    node.isActive = false;
-    }
-    if (depth < step) {
-      const sum = calculateSum(node);
-      node.isValid = sum === 8;
+    node.isActive = depth === step;
+    if (depth <= step) {
+      node.isValid = node.sum === 8;
+      if (node.isValid && !combinations.some(comb => comb.join(',') === node.path.join(','))) {
+        setCombinations(prev => [...prev, node.path]);
+      }
     } else {
       node.isValid = false;
     }
     node.children.forEach(child => updateTreeState(child, depth + 1));
-  };
-
-  const calculateSum = (node) => {
-    let sum = node.value === 'Start' ? 0 : node.value;
-    let parent = node;
-    while (parent.parent) {
-      parent = parent.parent;
-      if (parent.value !== 'Start') {
-        sum += parent.value;
-      }
-    }
-    return sum;
   };
 
   if (!tree) return <div>Loading...</div>;
@@ -87,9 +82,29 @@ const BacktrackingVisualization = () => {
   updateTreeState(tree, 0);
 
   return (
-    <svg width="600" height="600">
-      <TreeNode node={tree} depth={0} />
-    </svg>
+    <div style={{ fontFamily: 'Arial, sans-serif', padding: '20px' }}>
+      <h1 style={{ textAlign: 'center', color: '#37474F' }}>Backtracking Visualization: Combination Sum II</h1>
+      <h2 style={{ textAlign: 'center', color: '#546E7A' }}>Target: 8, Candidates: [1, 1, 2, 5, 6, 7]</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <svg width="1000" height="600">
+          <TreeNode node={tree} depth={0} />
+        </svg>
+        <div style={{ width: '300px', padding: '20px', backgroundColor: '#ECEFF1', borderRadius: '8px' }}>
+          <h3 style={{ color: '#37474F' }}>Current Combinations:</h3>
+          <ul style={{ listStyleType: 'none', padding: 0 }}>
+            {combinations.map((comb, index) => (
+              <li key={index} style={{ marginBottom: '10px', color: '#4CAF50', fontWeight: 'bold' }}>
+                [{comb.join(', ')}]
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <p>Step: {step}</p>
+        <button onClick={() => setStep(0)}>Reset</button>
+      </div>
+    </div>
   );
 };
 
